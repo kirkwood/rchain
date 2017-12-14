@@ -134,10 +134,11 @@ case class Network(homeAddress: String) extends ProtocolDispatcher {
       net.add(sender)
     }
 
-  override def dispatch(msg: ProtocolMessage): Unit =
+  override def dispatch(address: java.net.InetSocketAddress, msg: ProtocolMessage): Unit =
     for {
-      sender <- msg.sender
+      sndr <- msg.sender
     } {
+      val sender = sndr.withUdp(address)
       msg match {
         case upstream @ UpstreamMessage(proto, _) =>
           for {
@@ -160,7 +161,7 @@ case class Network(homeAddress: String) extends ProtocolDispatcher {
          * synchronous, request-response messaging.
          */
         case upstream @ UpstreamResponse(proto, _) =>
-          logger.error(s"Out-of-sequence message: $upstream")
+          logger.error(s"Out-of-sequence message: $upstream (from $address)")
         case _ => logger.warn(s"Unrecognized msg ${msg}")
       }
     }

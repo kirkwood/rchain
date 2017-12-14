@@ -36,10 +36,10 @@ case class UnicastNetwork(id: NodeIdentifier,
     override def run =
       while (true) {
         comm.recv match {
-          case Right(res) =>
+          case Right(Packet(address, data)) =>
             for {
-              msg <- ProtocolMessage.parse(res)
-            } dispatch(msg)
+              msg <- ProtocolMessage.parse(data)
+            } dispatch(address, msg)
           case Left(err: CommError) =>
             err match {
               case DatagramException(ex: SocketTimeoutException) => ()
@@ -95,19 +95,21 @@ case class UnicastNetwork(id: NodeIdentifier,
     potentials.toSeq
   }
 
-  def dispatch(msg: ProtocolMessage): Unit =
+  def dispatch(address: java.net.InetSocketAddress, msg: ProtocolMessage): Unit =
     for {
-      sender <- msg.sender
+      sndr <- msg.sender
     } {
       // Update sender's last-seen time, adding it if there are no
       // higher-level protocols.
+      // val ret = Endpoint(address.getHostAddress, address.getPort, address.getPort)
+      val sender = sndr.withUdp(address)
       table.observe(new ProtocolNode(sender, this), next == None)
       msg match {
         case ping @ PingMessage(_, _)             => handlePing(sender, ping)
         case lookup @ LookupMessage(_, _)         => handleLookup(sender, lookup)
         case disconnect @ DisconnectMessage(_, _) => handleDisconnect(sender, disconnect)
-        case resp: ProtocolResponse               => handleResponse(sender, resp)
-        case _                                    => next.foreach(_.dispatch(msg))
+        case resp: ProtocolResponse               => handleResponse(address, sender, resp)
+        case _                                    => next.foreach(_.dispatch(address, msg))
       }
     }
 
@@ -117,13 +119,13 @@ case class UnicastNetwork(id: NodeIdentifier,
    * Handle a response to a message. If this message isn't one we were
    * expecting, propagate it to the next dispatcher.
    */
-  private def handleResponse(sender: PeerNode, msg: ProtocolResponse): Unit =
+  private def handleResponse(address: java.net.InetSocketAddress, sender: PeerNode, msg: ProtocolResponse): Unit =
     for {
       ret <- msg.returnHeader
     } {
       pending.get(PendingKey(sender.key, ret.timestamp, ret.seq)) match {
         case Some(promise) => promise.success(Right(msg))
-        case None          => next.foreach(_.dispatch(msg))
+        case None          => next.foreach(_.dispatch(address, msg))
       }
     }
 

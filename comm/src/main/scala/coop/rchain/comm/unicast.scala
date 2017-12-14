@@ -1,6 +1,6 @@
 package coop.rchain.comm
 
-import java.net.{DatagramPacket, DatagramSocket}
+import java.net.{DatagramPacket, DatagramSocket, InetSocketAddress}
 import scala.util.control.NonFatal
 
 /**
@@ -68,10 +68,19 @@ case class UnicastComm(local: PeerNode) extends Comm {
     * Returns `Right` with the bytes read from the socket or Left with
     * an error, if something went wrong.
     */
-  override def recv: Either[CommError, Seq[Byte]] =
+  override def recv: Either[CommError, Packet] =
     try {
       receiver.receive(recv_dgram)
-      decode(recv_dgram.getData)
+      decode(recv_dgram.getData) match {
+        case Left(err) => Left(err)
+        case Right(data) =>
+          recv_dgram.getSocketAddress match {
+            case (addy: InetSocketAddress) =>
+              Right(Packet(addy, data))
+            case _ =>
+              Left(DatagramException(new Exception("datagram from nowhere")))
+          }
+      }
     } catch {
       case NonFatal(ex: Exception) => Left(DatagramException(ex))
     }

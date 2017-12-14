@@ -16,7 +16,7 @@ trait ProtocolDispatcher {
     * levels of protocol together, such that inner protocols can
     * bubble unhandled messages up to outer levels.
     */
-  def dispatch(msg: ProtocolMessage): Unit
+  def dispatch(address: java.net.InetSocketAddress, msg: ProtocolMessage): Unit
 }
 
 /**
