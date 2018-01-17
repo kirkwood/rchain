@@ -46,7 +46,7 @@
 (defOprn symbol-list-concat)
 (defPure Tuple (symbol-list-concat) (->symbol (fold (self) (proc [e acc k] (k (string-concat acc (->string e)))) "")))
 
-;; (defOprn flatten)
+(defOprn flatten)
 (defProc (flatten lst)
   (cond ((null? lst) [])
         ((not (type? lst Tuple)) lst)
