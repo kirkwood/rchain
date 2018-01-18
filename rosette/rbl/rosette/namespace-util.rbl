@@ -83,9 +83,9 @@
   (let [[subspace (tbl-get (self) channel)]]
     (if (absent? subspace)
         (seq
-         (tbl-add (self) channel [[] []])
-         (tbl-get (self) channel)
-         subspace))))
+          (tbl-add (self) channel [[] []])
+          (tbl-get (self) channel)
+          subspace))))
 
 (defOprn match-pattern)
 (defOprn match-tuple-pattern)
