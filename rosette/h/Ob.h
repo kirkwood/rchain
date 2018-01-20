@@ -605,7 +605,7 @@ class Ob : public Base {
     int size();
     int obCount();
     void unvisit();
-    bool compare(pOb);
+    virtual bool compare(pOb);
 
     virtual pOb self();
 

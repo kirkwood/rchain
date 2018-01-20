@@ -276,11 +276,7 @@ int Ob::size() {
 
 
 bool Ob::compare(Ob* other) {
-    if (IS_A(this, RBLstring)) {
-        return ((RBLstring*) this)->compare(other);
-    } else {
-        return this == other;
-    }
+    return this == other;
 }
 
 
